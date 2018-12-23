@@ -1,0 +1,323 @@
+<html>
+<head>
+    <title>Marks Assignment</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        body {font-family: Arial, Helvetica, sans-serif;}
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            padding-top: 10px; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto;
+            background-color: rgb(0,0,0); 
+            background-color: rgba(0,0,0,0.4); 
+        }
+        .modal-content {
+            background: #ddd;
+            margin: auto;
+            padding: 10px;
+            border-radius: 15px;
+            border: 2px solid #888;
+            width: 40%;
+        }
+        input[type=text], input[type=number], select {
+            width: 230px;
+            padding: 8px 12px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        input[type=text]:focus, input[type=number]:focus, select:focus {            
+            outline: none;
+            border-radius: 8px;
+            border: 2px solid #0099ff;
+        }
+
+        button {
+            min-width: 50px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 9px 10px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        button:hover {
+            outline: none;
+            border-radius: 8px;
+            background-color: rgb(47, 114, 49);
+        }
+
+        .tablecss {
+            font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        
+        .tablecss td, .tablecss th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        
+        .tablecss tr:nth-child(odd){background-color: #f2f2f2;}
+        
+        .tablecss tr:hover {background-color: #ddd;}
+        
+        .tablecss th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: left;
+            background-color: lavender;
+            color: black;
+            font-weight: bold;
+        }
+    </style>
+    <script>
+        let rollNo = sub1 = sub2 = sub3 = "";
+
+        function performAjax(httpMethod, url, params) {
+            const myPromise = new Promise((resolve, reject) => {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        resolve(JSON.parse(this.responseText));
+                    }
+                    if (this.status == 500) {
+                        reject({ error: true, message: "ServerError"});
+                    } 
+                    if (this.status == 404) {
+                        reject({ error: true, message: "Resource not found"});
+                    }
+                };
+                xhttp.open(httpMethod, url, true);
+                xhttp.setRequestHeader("Content-Type", "application/json");
+                params ? xhttp.send(params): xhttp.send();
+            });
+            return myPromise;
+        }
+
+        function loadData() {
+            const getMarksPromise = performAjax("GET", "http://localhost:3000/assignment/marks");
+            getMarksPromise
+            .then((marksList) => {
+                showMarksDetails(marksList);
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+        }
+
+        function showMarksDetails(records) {
+            document.getElementById('myModal').style.display = 'none';
+            document.getElementById("txtsearch").focus();
+            let tableRow = '';
+            const tableHeader = `<tr style="background: lavender;"><th>SNo</th><th>Roll No</th><th>Name</th><th>Sub1</th><th>Sub2</th><th>Sub3</th><th>Total</th><th>Avarage</th><th>Grade</th><th>Action</th></tr>`;
+            if(records.length > 0) {
+                tableRow = records.map((rec, index) => {
+                    let editButton = `<a id="${rec.rollNo}" class="fa fa-pencil" style="color:blue; font-size:22px;" onclick="editMarks(event)"></a>`;
+                    let deleteButton = `<a id="${rec.rollNo}" class="fa fa-trash" style="color:blue; font-size:22px;" onclick="deleteMarks(event)"></a>`;
+                    return `<tr><td align="right">${index + 1}</td><td align="center">${rec.rollNo}</td><td>${rec.name}</td>
+                        <td align="right">${rec.sub1}</td><td align="right">${rec.sub2}</td><td align="right">${rec.sub3}</td>
+                        <td align="right">${rec.total}</td><td align="right">${rec.avg}</td><td align="center">${rec.grade}</td>
+                        <td align="center">${editButton}&nbsp;&nbsp;&nbsp;${deleteButton}</td></tr>`;
+                });
+                document.getElementById("marks_table").innerHTML = `${tableHeader}${tableRow.join('')}`;
+            }
+            else {
+                tableRow = `<tr><td colspan="10" align="center">No Data Found</td></tr>`;
+                document.getElementById("marks_table").innerHTML = `${tableHeader}${tableRow}`;
+            }                
+        }
+
+        function enableAdd() {
+            event.preventDefault();
+            document.getElementById('myModal').style.display = 'block';
+            document.getElementById("btnadd").style.display = 'block';
+            document.getElementById("btnupdate").style.display = 'none';
+            document.getElementById("std_rno").focus();
+            document.getElementById("std_rno").disabled = false;
+            const getRollNosPromise = performAjax("GET", "http://localhost:3000/assignment/getRollNos");            
+            getRollNosPromise
+            .then((nos) => {
+                bindStudentRollNos(nos);               
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+        }
+        
+        function bindStudentRollNos(nos) {
+            let rollNos = document.getElementById("std_rno");
+            for (let i = 0; i < nos.length; i++) {
+                let option = document.createElement("OPTION");
+                option.innerHTML = nos[i].rollNo;
+                option.value = nos[i].rollNo;
+                rollNos.options.add(option);
+            }     
+        }
+
+        function createMarks(event) {
+            event.preventDefault();
+            rollNo = document.getElementById("std_rno").value;
+            sub1 = document.getElementById("sub1").value;
+            sub2 = document.getElementById("sub2").value;
+            sub3 = document.getElementById("sub3").value;
+            
+            if (rollNo == "")
+                alert('Please Enter Roll Number');     
+            else {      
+                    if(event.target.id === 'btnadd'){
+                        const addMarksPromise = performAjax( "POST", "http://localhost:3000/assignment/createMarks", JSON.stringify({ rollNo: parseInt(rollNo), sub1: parseInt(sub1), sub2: parseInt(sub2), sub3: parseInt(sub3) })
+                        );
+                        addMarksPromise
+                        .then(newMarksList => {
+                            showMarksDetails(newMarksList);
+                        })
+                        .catch(err => {
+                            alert(err.message);
+                        })
+                        
+                    } else {
+                        const updateMarksPromise = performAjax( "PUT", "http://localhost:3000/assignment/updateMarks", JSON.stringify({ rollNo: parseInt(rollNo), sub1: parseInt(sub1), sub2: parseInt(sub2), sub3: parseInt(sub3) })
+                        );
+                        updateMarksPromise
+                        .then(updatedMarksList => {
+                            showMarksDetails(updatedMarksList);
+                        })
+                        .catch(err => {
+                            alert(err.message);
+                        })
+                    }        
+                Cancel();
+            }
+        }
+
+        function editMarks(event) {
+            event.preventDefault();
+            const getEditRecordPromise = performAjax("GET", `http://localhost:3000/assignment/editMarksRecord/${event.target.id}`);
+            getEditRecordPromise
+            .then((editRecord) => {
+                bindStudentRollNos(editRecord);  
+                editRecord.map(record => {
+                    if (record.rollNo === parseInt(event.target.id)) {
+                        document.getElementById('myModal').style.display = 'block';
+                        document.getElementById("std_rno").disabled = true;
+                        document.getElementById("sub1").focus();
+                        document.getElementById("btnadd").style.display = 'none';
+                        document.getElementById("btnupdate").style.display = 'block';
+                        document.getElementById("std_rno").value = record.rollNo;
+                        document.getElementById("sub1").value = record.sub1;
+                        document.getElementById("sub2").value = record.sub2;
+                        document.getElementById("sub3").value = record.sub3;
+                    }
+                    else
+                        alert("No Record");
+                });                
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+        }
+        
+        function Cancel() {
+            event.preventDefault();
+            document.getElementById("std_rno").length = 1;
+            document.getElementById("sub1").value = "";
+            document.getElementById("sub2").value = "";
+            document.getElementById("sub3").value = "";     
+            document.getElementById('myModal').style.display = 'none';
+            document.getElementById("txtsearch").focus();       
+        }
+
+        function deleteMarks(event) {
+            event.preventDefault();
+            const deleteMarksPromise = performAjax('DELETE', `http://localhost:3000/assignment/deleteMarks/${event.target.id}`);
+            deleteMarksPromise
+            .then((remainingStudentMarks) => {
+                showMarksDetails(remainingStudentMarks);
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+        }
+        
+        function searchData(event) {
+            const searchString = event.target.value;
+            const searchMarksPromise = performAjax("GET", `http://localhost:3000/assignment/searchMarks?search=${searchString}`);
+            searchMarksPromise
+            .then(filteredStudentMarks => {
+                showMarksDetails(filteredStudentMarks);
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+        }
+    </script>
+</head>
+
+<body class="bg" onload="loadData()">
+    <center>
+        <br>
+        <form>
+            <button id="btnenable" onclick="enableAdd()">Add Subject Marks</button>
+            <input type="text" id="txtsearch" placeholder="Search" onkeyup="searchData(event)" style="margin-left: 420px;">
+            <br>
+            <table id="marks_table" class="tablecss" style="width: 800px;"></table>
+            <br>
+        </form>
+
+        <div id="myModal" class="modal">
+            <div class="modal-content">
+                <center>
+                    <h4>Add Subject Marks</h4>
+                </center>
+                <form>
+                    <table>
+                        <tr>
+                            <td>Roll Number</td>
+                            <td>
+                                <select id="std_rno">
+                                    <option value="--Select--">--Select--</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Subject 1</td>
+                            <td><input type="number" id="sub1"></td>
+                        </tr>
+                        <tr>
+                            <td>Subject 2</td>
+                            <td><input type="number" id="sub2"></td>
+                        </tr>
+                        <tr>
+                            <td>Subject 3</td>
+                            <td><input type="number" id="sub3"></td>
+                        </tr>
+                        <tr>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                        </tr>
+                        <tr>
+                            <td align="right">
+                                <button id="btnadd" onclick="createMarks(event)">Add Marks</button>
+                                <button id="btnupdate" onclick="createMarks(event)">Update Marks</button>
+                            </td>
+                            <td align="center">
+                                <button id="btncancel" onclick="Cancel()">Cancel</button>
+                            </td>
+                        </tr>
+                    </table>
+                </form>                
+            </div>
+        </div>
+    </center>
+</body>
+</html>

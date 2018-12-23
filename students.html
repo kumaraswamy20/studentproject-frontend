@@ -1,0 +1,334 @@
+<html>
+<head>
+    <title>Marks Assignment</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="table.css">
+    <style>
+        body {font-family: Arial, Helvetica, sans-serif;}
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            padding-top: 10px; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto;
+            background-color: rgb(0,0,0); 
+            background-color: rgba(0,0,0,0.4); 
+        }
+        .modal-content {
+            background: #ddd;
+            margin: auto;
+            padding: 10px;
+            border-radius: 15px;
+            border: 2px solid #888;
+            width: 40%;
+        }
+        input[type=text], input[type=number], select {
+            width: 230px;
+            padding: 8px 12px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        input[type=text]:focus, input[type=number]:focus, select:focus {            
+            outline: none;
+            border-radius: 8px;
+            border: 2px solid #0099ff;
+        }
+
+        button {
+            min-width: 50px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 9px 10px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        button:hover {
+            outline: none;
+            border-radius: 8px;
+            background-color: rgb(47, 114, 49);
+        }
+
+        .tablecss {
+            font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        
+        .tablecss td, .tablecss th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        
+        .tablecss tr:nth-child(odd){background-color: #f2f2f2;}
+        
+        .tablecss tr:hover {background-color: #ddd;}
+        
+        .tablecss th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: left;
+            background-color: lavender;
+            color: black;
+            font-weight: bold;
+        }
+    </style>
+    <script>
+        let rollno = name = mobile = branch = year = "";
+
+        function performAjax(httpMethod, url, params) {            
+            const myPromise = new Promise((resolve, reject) => {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        resolve(JSON.parse(this.responseText));
+                    }
+                    if (this.status == 500) {
+                        reject({ error: true, message: "ServerError"});
+                    } 
+                    if (this.status == 404) {
+                        reject({ error: true, message: "Resource not found"});
+                    }
+                };
+                xhttp.open(httpMethod, url, true);
+                xhttp.setRequestHeader("Content-Type", "application/json");
+                params ? xhttp.send(params): xhttp.send();
+            });
+            return myPromise;
+        }
+
+        function loadData() {
+            const getStudentsPromise = performAjax("GET", "http://localhost:4000/students");
+            getStudentsPromise
+            .then((studentsList) => {
+                showStudentDetails(studentsList);
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+        }
+
+        function showStudentDetails(records) {
+            document.getElementById('myModal').style.display = 'none';
+            document.getElementById("txtsearch").focus();
+            let tableRow = '';
+            const tableHeader = `<tr style="background: lavender;"><th>SNo</th><th>Roll No</th><th>Name</th><th>Mobile</th><th>Branch</th><th>Year</th><th>Action</th></tr>`;
+            if(records.length > 0) {
+                tableRow = records.map((student, index) => {
+                    let editButton = `<a id="${student._id}" class="fa fa-pencil" style="color:blue; font-size:22px;" onclick="editStudent(event)"></a>`;
+                    let deleteButton = `<a id="${student._id}" class="fa fa-trash" style="color:blue; font-size:22px;" onclick="deleteStudent(event)"></a>`;
+                    return `<tr><td align="right">${index + 1}</td><td align="center">${student.rollno}</td><td>${student.name}</td>
+                        <td align="center">${student.mobile}</td><td>${student.branch}</td><td>${student.year}</td>
+                        <td align="center">${editButton}&nbsp;&nbsp;&nbsp;${deleteButton}</td></tr>`;
+                });
+                document.getElementById("std_table").innerHTML = `${tableHeader}${tableRow.join('')}`;
+            }
+            else {
+                tableRow = `<tr><td colspan="7" align="center">No Data Found</td></tr>`;
+                document.getElementById("std_table").innerHTML = `${tableHeader}${tableRow}`;
+            }  
+        }
+
+        function enableAdd() {
+            event.preventDefault();
+            document.getElementById('myModal').style.display = 'block';
+            document.getElementById("btnadd").style.display = 'block';
+            document.getElementById("btnupdate").style.display = 'none';
+            document.getElementById("std_rno").disabled = false;
+            document.getElementById("std_rno").focus();
+        }
+
+        function createStudent(event) {
+            event.preventDefault();
+            const age = 30;
+            rollno = document.getElementById("std_rno").value;
+            name = document.getElementById("std_name").value;
+            mobile = document.getElementById("std_mobile").value;
+            branch = document.getElementById("std_branch").value;
+            year = document.getElementById("std_year").value;
+            const id=document.getElementById("hid").value;
+
+            let phoneno = /^\(?([6-9]{1})\)?[-. ]?([0-9]{9})$/;
+            
+            if (name == "")
+                alert('Please Enter Student Name');
+            else if (mobile == "")
+                alert('Please Enter Mobile Number');
+            else if (!mobile.match(phoneno))
+                alert("Please Enter Valid Mobile Number");            
+            else if (branch == "--Select--")
+                alert('Please Select Branch');    
+            else if (year == "--Select--")
+                alert('Please Select Year/Sem');        
+            else {      
+                    if(event.target.id === 'btnadd'){
+                        const addStudentPromise = performAjax( "POST", "http://localhost:4000/students", JSON.stringify({ rollno, name, age, mobile, branch, year })
+                        );
+                        addStudentPromise
+                        .then(newStudentsList => {
+                            showStudentDetails(newStudentsList);
+                        })
+                        .catch(err => {
+                            alert(err.message);
+                        })
+                        
+                    } else {
+                        const updateStudentPromise = performAjax( "PUT", `http://localhost:4000/students/${id}`, JSON.stringify({ name, mobile, branch, year })
+                        );
+                        updateStudentPromise
+                        .then(updatedStudentsList => {
+                            showStudentDetails(updatedStudentsList);
+                        })
+                        .catch(err => {
+                            alert(err.message);
+                        })
+                    }        
+                Cancel();
+            }
+        }
+        
+        function editStudent(event) {
+            event.preventDefault();
+            const getEditRecordPromise = performAjax("GET", `http://localhost:4000/students/${event.target.id}`);
+            getEditRecordPromise
+            .then((editRecord) => {
+                document.getElementById('myModal').style.display = 'block';
+                document.getElementById("std_rno").disabled = true;
+                document.getElementById("btnadd").style.display = 'none';
+                document.getElementById("btnupdate").style.display = 'block';
+                document.getElementById("std_name").focus();
+                document.getElementById("std_rno").value = editRecord.rollno;
+                document.getElementById("std_name").value = editRecord.name;
+                document.getElementById("std_mobile").value = editRecord.mobile;
+                document.getElementById("std_branch").value = editRecord.branch;
+                document.getElementById("std_year").value = editRecord.year;
+                document.getElementById("hid").value = editRecord._id;
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+        }
+
+        function Cancel() {
+            event.preventDefault();
+            document.getElementById("std_rno").value = "";
+            document.getElementById("std_name").value = "";
+            document.getElementById("std_mobile").value = "";
+            document.getElementById("std_branch").value = "--Select--";  
+            document.getElementById("std_year").value = "--Select--";     
+            document.getElementById('myModal').style.display = 'none';
+            document.getElementById("txtsearch").focus();       
+        }
+        
+        function deleteStudent(event) {
+            event.preventDefault();
+            const deleteStudentPromise = performAjax('DELETE', `http://localhost:4000/students/${event.target.id}`);
+            deleteStudentPromise
+            .then((remainingStudents) => {
+                showStudentDetails(remainingStudents);
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+        }
+        
+        function searchData(event) {
+            const searchString = event.target.value;
+            const searchStudentsPromise = performAjax("GET", `http://localhost:4000/students/search?string=${searchString}`);
+            searchStudentsPromise
+            .then(filteredStudents => {
+                showStudentDetails(filteredStudents);
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+        }
+    </script>
+</head>
+
+<body onload="loadData()">
+    <center>
+        <br>
+        <form>
+            <button id="btnenable" onclick="enableAdd()">Add New Student</button>
+            <input type="text" id="txtsearch" placeholder="Search" onkeyup="searchData(event)" style="margin-left: 330px;">
+            <br>
+            <table id="std_table" class="tablecss" style="width: 700px;"></table>
+            <br>
+        </form>
+
+        <div id="myModal" class="modal">
+            <div class="modal-content">
+                <center>
+                    <h4>Add New Student Details</h4>
+                </center>
+                <form>
+                    <table>
+                        <tr>
+                            <td>Roll Number</td>
+                            <td><input type="text" id="std_rno"></td>
+                        </tr>
+
+                        <tr>
+                            <td>Full Name</td>
+                            <td><input type="text" id="std_name"></td>
+                        </tr>
+                        <tr>
+                            <td>Mobile Number</td>
+                            <td><input type="number" maxlength=10 id="std_mobile"></td>
+                        </tr>
+                        <tr>
+                            <td>Branch</td>
+                            <td>
+                                <select id="std_branch">
+                                    <option value="--Select--">--Select--</option>
+                                    <option value="CSE">CSE</option>
+                                    <option value="ECE">ECE</option>
+                                    <option value="CIVIL">CIVIL</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Year/Sem</td>
+                            <td>
+                                <select id="std_year">
+                                    <option value="--Select--">--Select--</option>
+                                    <option value="I-I">I-I</option>
+                                    <option value="I-II">I-II</option>
+                                    <option value="II-I">II-I</option>
+                                    <option value="II-II">II-II</option>
+                                    <option value="III-I">III-I</option>
+                                    <option value="III-II">III-II</option>
+                                    <option value="IV-I">IV-I</option>
+                                    <option value="IV-II">IV-II</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input type="hidden" id="hid"></td>
+                            <td>&nbsp;</td>
+                        </tr>
+                        <tr>
+                            <td align="right">
+                                <button id="btnadd" onclick="createStudent(event)">Register</button>
+                                <button id="btnupdate" onclick="createStudent(event)">Update</button>
+                            </td>
+                            <td align="center">
+                                <button id="btncancel" onclick="Cancel()">Cancel</button>
+                            </td>
+                        </tr>
+                    </table>
+                </form>                
+            </div>
+        </div>
+    </center>
+</body>
+</html>

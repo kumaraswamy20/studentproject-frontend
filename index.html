@@ -1,0 +1,38 @@
+<html>
+    <title>Marks Assignment</title>
+    <head>
+        <style>
+            .header {
+                height: 60px; border-radius: 12px; background-color: lavender; text-align: center; padding: 2px;
+            }   
+            .menu {
+                height: 30px; background-color:lightblue; border-radius: 10px; text-align: center; padding-top: 10px;
+            }         
+            a {
+                min-width: 50px; background: linear-gradient(to bottom, #00cc99 0%, #ff99cc 100%);
+                color: white; font-weight: bold; padding: 7px 15px; margin: 8px 0;
+                border: none; border-radius: 8px; cursor: pointer; text-decoration: none !important;
+            }
+            a:hover {
+                outline: none; border-radius: 8px; border: 1px solid #0099ff;
+                background: linear-gradient(to top, #00cc99 0%, #ff99cc 100%);
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h2>Student Personal & Marks Information</h2>
+        </div>
+        <div class="menu">
+            <a href="http://localhost:3000/assignment/studentsIndex" target="iframe">Students</a>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <a href="http://localhost:3000/assignment/subjectsIndex" target="iframe">Subjects</a>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <a href="http://localhost:3000/assignment/marksIndex" target="iframe">Marks</a>
+        </div>
+        <iframe src="" name="iframe" id="iframe" style="width: 100%; height: 495px; border: none;"></iframe> 
+        <div class="menu">
+            Copy rights &copy; 2018
+        </div>    
+    </body>
+</html>
